@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="id">
+<!DOCTYPE html><html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Roblox Lua Encryptor</title>
-
-<style>
+<title>Roblox Lua Encryptor</title><style>
 body {
   margin: 0;
   background: #000;
@@ -25,9 +22,15 @@ body {
   border: 2px dashed #fff;
   padding: 20px;
   cursor: pointer;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 input[type="file"] { display: none; }
+
+.file-name {
+  font-size: 14px;
+  margin-bottom: 15px;
+  opacity: 0.8;
+}
 
 select, button {
   width: 100%;
@@ -69,50 +72,38 @@ textarea {
   border: 1px solid #fff;
   padding: 10px;
 }
-</style>
-</head>
-
-<body>
-
-<div class="container">
-  <h2>Roblox Lua Encryptor 🔐</h2>
-
-  <label class="file-btn">
+</style></head><body><div class="container">
+  <h2>Roblox Lua Encryptor 🔐</h2>  <label class="file-btn">
     [+] Select File
     <input type="file" id="fileInput">
-  </label>
-
-  <select id="fileType">
+  </label>  <div class="file-name" id="fileName">Belum ada file dipilih</div>  <select id="fileType">
     <option>.lua</option>
     <option>.txt</option>
     <option>.py</option>
     <option>.js</option>
-  </select>
-
-  <select id="mode">
+  </select>  <select id="mode">
     <option>Devil</option>
     <option>Extreme</option>
     <option>Hard</option>
     <option>Medium</option>
     <option>Perfect</option>
-  </select>
-
-  <button onclick="processFile()">Encrypt & Obfuscate</button>
+  </select><button onclick="processFile()">Encrypt & Obfuscate</button> <button onclick="downloadFile()">Download File</button>
 
   <div class="loading" id="loading">
     <div class="spinner"></div>
     <p>Processing...</p>
-  </div>
-
-  <textarea id="output" placeholder="Hasil muncul di sini..."></textarea>
-</div>
-
-<script>
+  </div>  <textarea id="output" placeholder="Hasil muncul di sini..."></textarea></div><script>
 let fileContent = "";
+let fileName = "output.lua";
+
+const fileNameLabel = document.getElementById("fileName");
 
 document.getElementById("fileInput").addEventListener("change", function(e) {
   const file = e.target.files[0];
   if (!file) return;
+
+  fileName = file.name.replace(/\.[^/.]+$/, "") + "_encrypted.lua";
+  fileNameLabel.textContent = "File: " + file.name;
 
   const reader = new FileReader();
   reader.onload = function(e) {
@@ -130,13 +121,13 @@ function randomString(length) {
   return result;
 }
 
-// XOR encrypt
+// XOR encrypt (lebih kuat: double pass)
 function xorEncrypt(text, key) {
   let result = "";
   for (let i = 0; i < text.length; i++) {
-    result += String.fromCharCode(
-      text.charCodeAt(i) ^ key.charCodeAt(i % key.length)
-    );
+    let c = text.charCodeAt(i) ^ key.charCodeAt(i % key.length);
+    c = c ^ 123; // extra layer
+    result += String.fromCharCode(c);
   }
   return btoa(result);
 }
@@ -192,6 +183,7 @@ local function decode(data)
 
     for i = 1, #decoded do
         local c = string.byte(decoded, i)
+        c = bxor(c, 123)
         local kbyte = string.byte(k, ((i-1) % #k) + 1)
         result = result .. string.char(bxor(c, kbyte))
     end
@@ -199,8 +191,7 @@ local function decode(data)
     return result
 end
 
-loadstring(decode(d))()
-`;
+loadstring(decode(d))()`;
 }
 
 function processFile() {
@@ -226,7 +217,21 @@ function processFile() {
     outputArea.value = finalCode;
   }, 1500);
 }
-</script>
 
-</body>
+function downloadFile() {
+  const content = document.getElementById("output").value;
+  if (!content) {
+    alert("Belum ada hasil!");
+    return;
+  }
+
+  const blob = new Blob([content], { type: "text/plain" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+</script></body>
 </html>
